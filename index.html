@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BioAlert · Sistema de información de plagas y clima para cultivos</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+<style>
+:root{--hoja:#1d3b2a;--hoja2:#2f6b46;--oro:#e0a100;--oro2:#fff3cc;--tierra:#5a3d2b;--fondo:#f4f6f1;--txt:#22302a;--suave:#5f6f66;--linea:#d9e0d4}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--fondo);color:var(--txt);line-height:1.6}
+h1,h2,h3{line-height:1.15}
+a{color:var(--hoja2)} :focus-visible{outline:3px solid var(--oro);outline-offset:2px}
+nav{position:sticky;top:0;z-index:10;background:var(--hoja);display:flex;align-items:center;gap:6px;padding:8px 16px;overflow-x:auto}
+nav img{width:34px;height:34px;border-radius:50%;background:#fff;padding:2px;margin-right:6px}
+nav b{color:#fff;margin-right:auto;font-size:1.1rem}
+nav a{color:#e8f0e6;text-decoration:none;padding:6px 12px;border-radius:8px;font-size:.92rem;white-space:nowrap}
+nav a:hover{background:rgba(255,255,255,.12)}
+.hero{background:linear-gradient(135deg,#12281c,#2f6b46 70%,#6aa56f);color:#fff;padding:26px 20px 30px;position:relative;overflow:hidden}
+.hero .in{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:28px;flex-wrap:wrap;position:relative;z-index:2}
+.hero img{width:150px;height:150px;border-radius:50%;background:#fff;padding:6px;box-shadow:0 8px 28px rgba(0,0,0,.35)}
+.hero h1{font-size:clamp(2.6rem,7vw,4rem);font-weight:800;letter-spacing:-1px}
+.hero h2{font-size:clamp(1.15rem,2.6vw,1.6rem);font-weight:500;max-width:700px;margin:8px 0 14px}
+.hero p{max-width:640px;margin-bottom:14px;opacity:.92}
+.btn{display:inline-block;width:auto;padding:12px 24px;border:0;border-radius:10px;background:var(--oro);color:#2a1d00;font:700 1rem 'Segoe UI',sans-serif;cursor:pointer;text-decoration:none}
+.btn:hover{filter:brightness(1.08)} .btn:disabled{opacity:.6;cursor:wait}
+section.bloque{max-width:1100px;margin:0 auto;padding:32px 20px 4px}
+.bloque>h2{font-size:1.9rem;color:var(--hoja);margin-bottom:8px}
+.lead{color:var(--suave);max-width:700px;margin-bottom:16px}
+.app{display:grid;gap:22px;grid-template-columns:1fr}
+.campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 16px;align-items:end}
+.campos .btn{margin-bottom:12px}
+.bloque>h2,.bloque>.lead{text-align:center}
+.lead{margin-left:auto;margin-right:auto}
+@media(max-width:850px){.app{grid-template-columns:1fr}}
+.panel{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:22px}
+.panel h3{color:var(--hoja);font-size:1.15rem;margin-bottom:14px}
+label{display:block;font-size:.85rem;font-weight:700;margin-bottom:4px;color:var(--tierra)}
+input,textarea{width:100%;border:1.5px solid var(--linea);border-radius:10px;padding:11px;margin-bottom:12px;font:inherit;background:#fcfdfb}
+input:focus,textarea:focus{outline:none;border-color:var(--hoja2);box-shadow:0 0 0 3px rgba(47,107,70,.18)}
+.panel .btn{width:100%;background:var(--hoja);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:14px 0}
+.kpi{border-left:4px solid var(--oro);background:var(--oro2);border-radius:8px;padding:10px 14px}
+.kpi b{display:block;font-size:1.6rem;color:var(--hoja)} .kpi span{font-size:.8rem;color:var(--suave)}
+.badge{display:inline-block;padding:3px 14px;border-radius:20px;color:#fff;font-weight:700}
+.Alto{background:#c62828}.Medio{background:#b57f00}.Bajo{background:#2e7d32}
+.aviso,.nota{background:#fff8e1;border-left:4px solid var(--oro);padding:8px 12px;border-radius:8px;font-size:.85rem;margin:8px 0}
+.explica{border-top:1px solid var(--linea);margin-top:18px;padding-top:6px}
+.puntos{list-style:none}.puntos li{padding:10px 0;border-bottom:1px solid var(--linea)}
+.puntos li b{display:block;color:var(--hoja)} .puntos li span{color:var(--suave);font-size:.9rem}
+.acciones{margin:6px 0 10px 22px}
+.oculto{display:none}
+.ciclo{display:flex;flex-wrap:wrap;margin:0 0 16px;border:1px solid var(--linea);border-radius:14px;overflow:hidden;background:#fff}
+.ciclo div{flex:1 1 150px;padding:10px 14px;border-right:1px solid var(--linea)}
+.ciclo div:last-child{border:0} .ciclo b{display:block;color:var(--hoja)} .ciclo span{font-size:.85rem;color:var(--suave)}
+#chat{max-height:220px;overflow:auto;margin-bottom:12px;display:flex;flex-direction:column;gap:8px}
+.msg{padding:10px 14px;border-radius:12px;max-width:92%;white-space:pre-wrap;font-size:.93rem}
+.yo{background:var(--hoja2);color:#fff;align-self:flex-end}.bot{background:#eef3ea}
+.msg small{display:block;margin-top:6px;opacity:.7}
+.tabla{width:100%;border-collapse:collapse;font-size:.88rem}
+.tabla th{background:#e8efe3;color:var(--hoja);text-align:left;padding:8px;white-space:nowrap}
+.tabla td{padding:8px;border-bottom:1px solid var(--linea)}
+button.mini{width:auto;padding:5px 12px;font-size:.8rem;border-radius:8px;border:0;background:var(--hoja);color:#fff;cursor:pointer}
+.proy{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media(max-width:850px){.proy{grid-template-columns:1fr}}
+.objetivo{grid-column:1/-1;background:var(--hoja);color:#fff;border-radius:14px;padding:28px}
+.objetivo h3{color:var(--oro);margin-bottom:8px} .objetivo p{font-size:1.1rem;max-width:820px}
+.proy ul,.creditos ul{margin-left:20px} .proy li,.creditos li{margin-bottom:8px}
+.refs li{padding-left:1.5em;text-indent:-1.5em;list-style:none;margin-left:-20px}
+footer{margin-top:28px;background:var(--hoja);color:#cfdccd;text-align:center;font-size:.82rem;padding:26px 16px}
+.fondo{position:absolute;inset:0;width:100%;height:100%}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,30,18,.82) 0%,rgba(10,30,18,.5) 55%,rgba(10,30,18,.08) 100%)}
+.galeria{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 2px 12px}
+.tarjeta{flex:0 0 270px;scroll-snap-align:start;background:#fff;border:1px solid var(--linea);border-top:5px solid var(--c);border-radius:14px;overflow:hidden;transition:transform .15s}
+.tarjeta:hover{transform:translateY(-3px)}
+.cabeza{display:flex;align-items:center;gap:8px;padding:10px 12px 0}
+.num{width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;font-weight:700;font-size:.8rem;display:grid;place-items:center}
+.chip{font-size:.72rem;font-weight:700;color:var(--c);background:#f2f4ee;padding:2px 10px;border-radius:20px}
+.tarjeta svg{width:100%;height:150px;display:block;margin-top:8px;background:#f6f1e3}
+.tarjeta figcaption{padding:10px 14px 14px;font-size:.88rem}
+.tarjeta h3{font-size:1.02rem;color:var(--hoja);margin-bottom:3px}
+.buscar{margin-top:8px;background:var(--oro2);border-radius:8px;padding:6px 10px;font-size:.82rem}
+.cred{display:block;text-align:center;font-size:.76rem;color:var(--suave)}
+</style>
+</head>
+<body>
+<nav>
+  <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo BioAlert"><b>BioAlert</b>
+  <a href="#analizar">Analizar</a><a href="#maiz">Maíz y plaga</a><a href="#preguntas">Preguntas</a><a href="#historial-sec">Historial</a><a href="#proyecto">Proyecto</a><a href="#creditos">Créditos</a>
+</nav>
+ 
+<header class="hero"><svg class="fondo" id="campo" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg><div class="in">
+  <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo de BioAlert">
+  <div>
+    <h1>BioAlert</h1>
+    <h2>Sistema de información de plagas (gusano cogollero) y clima para cultivos agrícolas</h2>
+    <p>Usa datos abiertos del IDEAM para estimar qué tan rápido podría desarrollarse el gusano cogollero en tu municipio y explica qué revisar en el cultivo de maíz.</p>
+    <a class="btn" href="#analizar">Analizar mi municipio</a>
+  </div>
+</div></header>
+ 
+<section class="bloque" id="analizar">
+  <h2>Consulta las condiciones de tu zona</h2>
+  <p class="lead">Escribe tu nombre y el lugar. Descargamos los últimos 30 días de clima de las estaciones del IDEAM más cercanas.</p>
+  <div class="app">
+    <div class="panel">
+      <h3>Tu consulta</h3>
+      <div class="campos">
+        <div><label for="usuario">Nombre</label><input id="usuario" autocomplete="name"></div>
+        <div><label for="departamento">Departamento</label><input id="departamento" placeholder="Ej. Cundinamarca"></div>
+        <div><label for="municipio">Municipio</label><input id="municipio" placeholder="Ej. Soacha"></div>
+        <div><label for="cultivo">Cultivo</label><input id="cultivo" value="Maíz"></div>
+        <div><button class="btn" id="btnConsulta">Analizar condiciones</button></div>
+      </div>
+    </div>
+    <div class="panel" id="panelRes">
+      <h3>Condiciones y desarrollo de la plaga</h3>
+      <p id="estado">Completa el formulario y pulsa «Analizar condiciones».</p>
+      <div id="avisos"></div>
+      <div id="resultado" class="oculto">
+        <p>Periodo: <b id="periodo"></b><br>Desarrollo potencial de la plaga: <span id="riesgo" class="badge"></span></p>
+        <div class="kpis">
+          <div class="kpi"><b id="kT">–</b><span>Temp. media (°C)</span></div>
+          <div class="kpi"><b id="kG">–</b><span>Grados-día acumulados</span></div>
+          <div class="kpi"><b id="kH">–</b><span>Humedad relativa (%)</span></div>
+          <div class="kpi"><b id="kP">–</b><span>Precipitación (mm)</span></div>
+        </div>
+        <canvas id="grafica" height="110"></canvas>
+        <div class="explica"><h3>¿Qué significa esto?</h3><div id="explicacion"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+ 
+<section class="bloque" id="maiz">
+  <h2>El maíz y el gusano cogollero</h2>
+  <p class="lead">El gusano cogollero (<i>Spodoptera frugiperda</i>) es la larva de una polilla y ataca sobre todo el cogollo, las hojas jóvenes de la planta.</p>
+  <div class="ciclo">
+    <div><b>Huevo</b><span>Masas sobre las hojas, en el envés.</span></div>
+    <div><b>Larva</b><span>Causa el daño al alimentarse del follaje.</span></div>
+    <div><b>Pupa</b><span>Se transforma en el suelo.</span></div>
+    <div><b>Polilla</b><span>El adulto pone nuevos huevos.</span></div>
+  </div>
+  <p class="lead">Según CropLife Latin America, el ciclo completo dura aproximadamente entre 24 y 40 días.</p>
+  <div class="galeria" id="galeria"></div>
+  <span class="cred">Figuras 1 a 6: ilustraciones esquemáticas originales del equipo BioAlert (2026), creadas con apoyo de IA y revisadas por el equipo; no están a escala. Desliza para ver todas.</span>
+</section>
+ 
+<section class="bloque" id="preguntas">
+  <h2>Pregunta sobre el cogollero</h2>
+  <p class="lead">Las respuestas salen de la base de datos de BioAlert: resúmenes con palabras propias del equipo, basados en CropLife Latin America. No son un diagnóstico.</p>
+  <div class="panel">
+    <div id="chat"><div class="msg bot">Hola. Pregúntame, por ejemplo: «¿Cómo identifico el gusano cogollero?» o «¿Cuándo debo controlarlo?»</div></div>
+    <textarea id="pregunta" rows="2" aria-label="Tu pregunta" placeholder="Escribe tu pregunta..."></textarea>
+    <button class="btn" id="btnPregunta">Preguntar</button>
+  </div>
+</section>
+ 
+<section class="bloque" id="historial-sec">
+  <h2>Mis consultas anteriores</h2>
+  <p class="lead">Escribe tu nombre en el formulario de arriba y pulsa el botón para ver tus últimas consultas.</p>
+  <div class="panel"><button class="btn" id="btnHistorial" style="max-width:260px">Ver mi historial</button>
+  <div id="historial" style="margin-top:14px;overflow-x:auto"></div></div>
+</section>
+ 
+<section class="bloque" id="proyecto">
+  <h2>Sobre el proyecto</h2>
+  <p class="lead">Proyecto de Gestión del Conocimiento · Universidad de Cundinamarca, Facultad de Ingeniería, Soacha.</p>
+  <div class="proy">
+    <div class="objetivo"><h3>Objetivo general</h3>
+      <p>Desarrollar un sistema de información basado en Big Data, computación en la nube e Inteligencia Artificial que proporcione predicciones y recomendaciones personalizadas para agricultores, mejorando la toma de decisiones en cultivos sin necesidad de sensores físicos.</p></div>
+    <div class="panel"><h3>Alcance de esta versión</h3><ul>
+      <li>Se centra en el gusano cogollero en cultivos de maíz.</li>
+      <li>Es una solución de software: no usa sensores físicos ni drones.</li>
+      <li>No reemplaza el conocimiento de los agricultores ni la orientación de un técnico agrícola.</li>
+      <li>Aún no cubre otros cultivos ni otras plagas.</li></ul></div>
+    <div class="panel"><h3>Pregunta que guía el trabajo</h3>
+      <p>¿Cómo usar una herramienta basada en tecnologías 4.0 para apoyar a los agricultores en la detección temprana de plagas y la anticipación de riesgos climáticos, para reducir pérdidas y mejorar la productividad?</p></div>
+    <p style="grid-column:1/-1;color:var(--suave)">Equipo: Vanesa Suarez Pérez y Paula Valeska Mendoza Fonseca.</p>
+  </div>
+</section>
+ 
+<section class="bloque" id="creditos">
+  <h2>Créditos y derechos de autor</h2>
+  <div class="panel creditos">
+    <h3 class="sub">Qué se usó</h3>
+    <ul>
+      <li><b>Ilustraciones:</b> originales, creadas con apoyo de un asistente de IA (Claude, de Anthropic) y revisadas por el equipo. Son dibujos esquemáticos, no a escala; no se usaron fotografías ni imágenes de terceros.</li>
+      <li><b>Datos climáticos:</b> IDEAM, datos abiertos en datos.gov.co, mostrados tal como los entrega la fuente. El procesamiento y la interpretación son del equipo y no cuentan con aval del IDEAM.</li>
+      <li><b>Parámetros de desarrollo de la plaga:</b> Yáñez López et al. (2019), con datos de Ramírez et al. (1987).</li>
+      <li><b>Información de la plaga:</b> resúmenes con palabras propias del equipo, basados en CropLife Latin America; no son copia del original.</li>
+      <li><b>Software:</b> Chart.js (licencia MIT).</li>
+      <li><b>Logo y textos del proyecto:</b> © equipo BioAlert, Universidad de Cundinamarca.</li>
+    </ul>
+    <h3 class="sub">Referencias (APA 7)</h3>
+    <ul class="refs">
+      <li>CropLife Latin America. (s. f.). <i>Gusano cogollero del maíz: Ciclo de vida, insecticidas y opciones de control biológico</i>. <a href="https://croplifela.org/es/plagas/listado-de-plagas/gusano-cogollero" target="_blank" rel="noopener">https://croplifela.org/es/plagas/listado-de-plagas/gusano-cogollero</a></li>
+      <li>Instituto de Hidrología, Meteorología y Estudios Ambientales. (s. f.). <i>[Título exacto de cada conjunto de datos]</i> [Conjunto de datos]. Datos Abiertos Colombia. <a href="https://www.datos.gov.co" target="_blank" rel="noopener">https://www.datos.gov.co</a></li>
+      <li>Yáñez López, R., Vázquez Ortega, A., Arreguín Centeno, J. H., Soria Ruíz, J., &amp; Quijano Carranza, J. A. (2019). Sistema de alerta contra el gusano cogollero <i>Spodoptera frugiperda</i>. <i>Revista Mexicana de Ciencias Agrícolas, 10</i>(2), 405-416. <a href="https://dialnet.unirioja.es/descarga/articulo/6864354.pdf" target="_blank" rel="noopener">https://dialnet.unirioja.es/descarga/articulo/6864354.pdf</a></li>
+    </ul>
+  </div>
+</section>
+ 
+<footer>BioAlert · Prototipo académico · Úsalo como orientación y consulta a un técnico agrícola.</footer>
+ 
+<script>
+const $ = id => document.getElementById(id);
+let grafica;
+async function jsonSeguro(r){ try{ return await r.json(); }catch(_){ throw new Error("El servidor devolvió un error (código " + r.status + "). Revisa la pantalla negra donde corre python app.py: ahí aparece la causa."); } }
+const K="#2b3d2f", G1="#7fb069", G2="#5a9a5c";
+const pts = (a, f) => a.map(f).join("");
+/* Fondo del encabezado: campo de maíz en tres hileras */
+(function(){
+  let s = 11; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  let d = `<defs><linearGradient id="cielo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fc3d4"/><stop offset=".65" stop-color="#f4dfa6"/></linearGradient></defs><rect width="1200" height="300" fill="url(#cielo)"/><circle cx="990" cy="64" r="30" fill="#fff4c8"/><path d="M0 150Q220 112 440 140T840 128T1200 140V300H0Z" fill="#8fb28a"/><path d="M0 180Q260 150 560 174T1200 168V300H0Z" fill="#6f9b68"/>`;
+  const planta = (x, y, k, c) => {
+    let o = `<path d="M${x} ${y}V${y-62*k}" stroke="${c}" stroke-width="${3*k}" stroke-linecap="round"/>`;
+    for(let i = 0; i < 5; i++){ const hh = y-(12+i*11)*k, dir = i%2 ? 1 : -1, L = (24+r()*12)*k;
+      o += `<path d="M${x} ${hh}Q${x+dir*L*.6} ${hh-13*k} ${x+dir*L} ${hh+7*k}" stroke="${c}" stroke-width="${3.2*k}" fill="none" stroke-linecap="round"/>`; }
+    o += `<path d="M${x} ${y-62*k}l${-6*k} ${-11*k}M${x} ${y-62*k}v${-14*k}M${x} ${y-62*k}l${6*k} ${-11*k}" stroke="#cfa93a" stroke-width="${1.6*k}" stroke-linecap="round"/>`;
+    if(k > 1) o += `<ellipse cx="${x+6*k}" cy="${y-34*k}" rx="${3.4*k}" ry="${9*k}" fill="#d9a21a"/>`;
+    return o; };
+  [[170,.55,"#5b8f58",30],[222,.85,"#417a47",48],[290,1.35,"#2f6b3a",86]].forEach(([y,k,c,paso]) => { for(let x=-10; x<1230; x+=paso*(.85+r()*.3)) d += planta(x, y+r()*8, k, c); });
+  d += `<rect y="288" width="1200" height="12" fill="#6b4f35"/>`;
+  document.getElementById("campo").innerHTML = d;
+})();
+ 
+/* Ilustraciones didácticas (originales) */
+const hoja = (dir, y, len, rise) => `<path d="M100 ${y}Q${100+dir*len*.55} ${y-rise*1.6} ${100+dir*len} ${y+rise*.3}Q${100+dir*len*.5} ${y-rise*.3} 100 ${y+4}Z" fill="${G1}" stroke="${K}" stroke-width="1.4" stroke-linejoin="round"/><path d="M100 ${y+2}L${100+dir*len*.88} ${y-rise*.3}" stroke="${G2}" stroke-width=".9"/>`;
+const DIB = {
+  maiz: `<rect y="118" width="200" height="32" fill="#cfae82"/><path d="M0 118h200" stroke="${K}" stroke-width="1.2"/><path d="M100 122V34" stroke="${K}" stroke-width="7" stroke-linecap="round"/><path d="M100 122V34" stroke="${G2}" stroke-width="4.4" stroke-linecap="round"/>${hoja(1,108,70,-22)}${hoja(-1,96,66,-20)}${hoja(1,80,56,-18)}${hoja(-1,66,48,-16)}<path d="M100 34l-9-16M100 34v-20M100 34l9-16" stroke="#c9a227" stroke-width="2" stroke-linecap="round"/><path d="M104 92c10-6 15 6 12 22-10 4-17-6-12-22Z" fill="#e0a100" stroke="${K}" stroke-width="1.3"/><path d="M104 94c-5 10-3 20 4 28M118 98c3 8 2 16-2 22" fill="none" stroke="${K}" stroke-width="1.3"/><path d="M110 90l-3-8M112 90l1-9M114 91l5-7" stroke="#b5651d" stroke-width="1.2"/>`,
+  huevos: `<path d="M10 122C40 28 160 22 192 112C150 148 52 150 10 122Z" fill="#8fc27b" stroke="${K}" stroke-width="1.6"/><path d="M18 120C70 98 130 98 184 114" stroke="${G2}" stroke-width="2" fill="none"/>${pts([44,70,96,122,148],x=>`<path d="M${x} 106l-12-26M${x} 108l-10 22" stroke="#6aa65f" stroke-width="1" fill="none"/>`)}${pts([[86,86],[98,86],[110,86],[122,86],[92,76],[104,76],[116,76],[98,66],[110,66]],q=>`<circle cx="${q[0]}" cy="${q[1]}" r="5.4" fill="#cdbf86" stroke="#8f8040" stroke-width="1"/>`)}<path d="M76 92Q80 54 108 54Q140 58 136 92Q106 100 76 92Z" fill="#f2ead2" opacity=".55" stroke="#b9ab78" stroke-dasharray="2 2"/>`,
+  larva: `<path d="M0 106Q100 72 200 102V150H0Z" fill="#8fc27b"/><path d="M0 106Q100 72 200 102" stroke="${K}" stroke-width="1.4" fill="none"/>${pts([0,1,2,3,4,5,6],i=>{const cx=66+i*14, cy=106-Math.sin(i/6*Math.PI)*18; return `<path d="M${cx} ${cy+10}v5" stroke="${K}" stroke-width="2.4"/><ellipse cx="${cx}" cy="${cy}" rx="9" ry="11" fill="${i%2?"#8fae52":"#7f9f45"}" stroke="#3d4a22" stroke-width="1.2"/><circle cx="${cx}" cy="${cy-4}" r="1.1" fill="#222"/>`;})}<path d="M66 100Q108 66 152 100M66 106Q108 72 152 106" stroke="#efe7a6" stroke-width="1.4" fill="none"/><circle cx="54" cy="108" r="12" fill="#6e4a2b" stroke="#3b2a1a" stroke-width="1.2"/><path d="M54 101V108M54 108L49 113M54 108L59 113" stroke="#f0e6b0" stroke-width="1.6"/><circle cx="49" cy="105" r="1.3" fill="#111"/>`,
+  cogollo: `<rect width="200" height="150" fill="#f6f1e3"/>${hoja(-1,138,74,-60)}${hoja(1,138,74,-60)}${hoja(1,140,40,-70)}<path d="M100 140Q92 80 100 24Q108 80 100 140Z" fill="#9ccc86" stroke="${K}" stroke-width="1.4"/>${pts([[96,84],[104,92],[98,102],[103,72],[100,114],[97,62],[104,104],[96,120]],q=>`<circle cx="${q[0]}" cy="${q[1]}" r="2.8" fill="#9a7b4f" stroke="#5e4630" stroke-width=".8"/>`)}`,
+  ventanas: `<path d="M12 116C56 28 150 26 190 98C140 142 56 152 12 116Z" fill="#6fa86b" stroke="${K}" stroke-width="1.6"/><path d="M18 116C70 90 130 88 184 98" stroke="${G2}" stroke-width="2" fill="none"/>${pts([[66,92,-8],[88,80,4],[112,84,-4],[138,90,6],[100,104,0],[74,108,-10]],q=>`<rect x="${q[0]}" y="${q[1]}" width="15" height="7" rx="3" fill="#dff0d3" stroke="#9cc48f" stroke-width=".8" transform="rotate(${q[2]} ${q[0]+7} ${q[1]+3})"/>`)}`,
+  polilla: `<path d="M100 88Q58 38 26 76Q56 106 100 100ZM100 88Q142 38 174 76Q144 106 100 100Z" fill="#7a644b" stroke="${K}" stroke-width="1.4"/><path d="M100 100Q70 118 50 132Q86 138 100 114ZM100 100Q130 118 150 132Q114 138 100 114Z" fill="#f4f1ea" stroke="#9a8f7e" stroke-width="1.2"/><ellipse cx="100" cy="102" rx="5" ry="25" fill="#4a3a2a" stroke="${K}" stroke-width="1.2"/><circle cx="100" cy="76" r="5" fill="#4a3a2a"/><path d="M97 72Q92 62 86 58M103 72Q108 62 114 58" stroke="${K}" stroke-width="1.2" fill="none"/>${pts([[62,78],[80,86],[138,78],[120,86]],q=>`<circle cx="${q[0]}" cy="${q[1]}" r="3.4" fill="#e9dfc6"/>`)}`
+};
+const FIG = [
+  ["maiz","Cultivo","#2f6b46","Planta de maíz","Es más vulnerable en la fase vegetativa inicial.","Unos 30 días después de la siembra: revisa el cogollo."],
+  ["huevos","Etapa del insecto","#b8860b","Masa de huevos","La hembra los pone en grupos cubiertos de pelos.","Masas de 100 a 300 huevos en el envés de las hojas."],
+  ["larva","Etapa del insecto","#4f7a2a","Larva","Es la que causa el daño al comer hojas y cogollo.","Tres líneas claras en el cuerpo y una Y invertida en la cabeza."],
+  ["cogollo","Señal de daño","#a4452c","Cogollo con aserrín","El aserrín es el excremento de la larva.","Mucho aserrín: la larva ya está dentro (daño grado 3)."],
+  ["ventanas","Señal de daño","#a4452c","Ventanitas en la hoja","Aparecen cuando las larvas son muy pequeñas.","Manchas translúcidas sin perforar: es el momento de actuar (grado 1)."],
+  ["polilla","Etapa del insecto","#6b4f35","Polilla adulta","Pone los huevos y reinicia el ciclo.","35 a 40 mm; alas delanteras oscuras y traseras blancas."]
+];
+FIG.forEach(([k, tipo, col, t, tx, buscar], i) => {
+  const f = document.createElement("figure"); f.className = "tarjeta"; f.style.setProperty("--c", col);
+  f.innerHTML = `<div class="cabeza"><span class="num">${i+1}</span><span class="chip">${tipo}</span></div><svg viewBox="0 0 200 150" role="img" aria-label="${t}">${DIB[k]}</svg>`;
+  const c = document.createElement("figcaption");
+  const h = document.createElement("h3"); h.textContent = t;
+  const p = document.createElement("p"); p.textContent = tx;
+  const b = document.createElement("div"); b.className = "buscar"; const bb = document.createElement("b"); bb.textContent = "Qué buscar: "; b.append(bb, buscar);
+  c.append(h, p, b); f.appendChild(c); $("galeria").appendChild(f);
+});
+ 
+async function post(url, datos){
+  const r = await fetch(url, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(datos)});
+  const j = await jsonSeguro(r);
+  if(!r.ok) throw Object.assign(new Error(j.error || "Error"), {avisos:j.avisos});
+  return j;
+}
+function mostrarAvisos(lista){
+  (lista || []).forEach(a => { const d = document.createElement("div"); d.className = "aviso"; d.textContent = a; $("avisos").appendChild(d); });
+}
+function dibujarExplicacion(ex){
+  const caja = $("explicacion"); caja.innerHTML = "";
+  const ul = document.createElement("ul"); ul.className = "puntos";
+  (ex.puntos || []).forEach(p => {
+    const li = document.createElement("li");
+    const b = document.createElement("b"); b.textContent = p.icono + " " + p.titulo + ": " + p.clave;
+    const s = document.createElement("span"); s.textContent = p.detalle;
+    li.append(b, s); ul.appendChild(li);
+  });
+  caja.appendChild(ul);
+  if((ex.acciones || []).length){
+    const h = document.createElement("h3"); h.style.fontSize = "1rem"; h.textContent = "Qué puedes hacer (fuente: " + ex.fuente_acciones + ")";
+    const ul2 = document.createElement("ul"); ul2.className = "acciones";
+    ex.acciones.forEach(a => { const li = document.createElement("li"); li.textContent = a; ul2.appendChild(li); });
+    caja.append(h, ul2);
+  }
+  if(ex.aviso){ const n = document.createElement("div"); n.className = "nota"; n.textContent = ex.aviso; caja.appendChild(n); }
+}
+$("btnConsulta").onclick = async () => {
+  const b = $("btnConsulta"); b.disabled = true;
+  $("estado").textContent = "Descargando datos del IDEAM y calculando... (puede tardar unos segundos)";
+  $("avisos").innerHTML = ""; $("resultado").classList.add("oculto");
+  try{
+    const r = await post("/api/consulta", {usuario:$("usuario").value, departamento:$("departamento").value, municipio:$("municipio").value, cultivo:$("cultivo").value});
+    $("estado").textContent = "";
+    $("periodo").textContent = `${r.desde} → ${r.hasta} (${r.n_dias} días)`;
+    $("riesgo").textContent = r.riesgo; $("riesgo").className = "badge " + r.riesgo;
+    $("kT").textContent = r.t_media ?? "–"; $("kG").textContent = r.gda ?? "–";
+    $("kH").textContent = r.hr_media ?? "–"; $("kP").textContent = r.p_acum ?? "–";
+    mostrarAvisos(r.avisos);
+    $("resultado").classList.remove("oculto");
+    dibujarExplicacion(r.explicacion || {});
+    if(grafica) grafica.destroy();
+    grafica = new Chart($("grafica"), {data:{labels:r.serie.map(s=>s.fecha.slice(5)), datasets:[
+      {type:"line", label:"Temp. media (°C)", data:r.serie.map(s=>s.tmedia), borderColor:"#c2570c", tension:.3, yAxisID:"y"},
+      {type:"bar", label:"Precipitación (mm)", data:r.serie.map(s=>s.p), backgroundColor:"rgba(47,107,70,.45)", yAxisID:"y1"}]},
+      options:{scales:{y:{title:{display:true,text:"°C"}}, y1:{position:"right", beginAtZero:true, suggestedMax:5, grid:{drawOnChartArea:false}, title:{display:true,text:"mm"}}}}});
+  }catch(e){ $("estado").textContent = "⚠️ " + e.message; mostrarAvisos(e.avisos); }
+  finally{ b.disabled = false; }
+};
+function burbuja(texto, clase, fuente){
+  const d = document.createElement("div"); d.className = "msg " + clase; d.textContent = texto;
+  if(fuente){ const s = document.createElement("small"); s.textContent = "Fuente: " + fuente; d.appendChild(s); }
+  $("chat").appendChild(d); $("chat").scrollTop = $("chat").scrollHeight;
+}
+$("btnPregunta").onclick = async () => {
+  const p = $("pregunta").value.trim(); if(!p) return;
+  burbuja(p, "yo"); $("pregunta").value = "";
+  try{ const r = await post("/api/pregunta", {usuario:$("usuario").value, pregunta:p}); burbuja(r.respuesta, "bot", r.fuente); }
+  catch(e){ burbuja("⚠️ " + e.message, "bot"); }
+};
+$("btnHistorial").onclick = async () => {
+  const caja = $("historial"); caja.textContent = "Cargando...";
+  try{
+    const r = await fetch("/api/historial?usuario=" + encodeURIComponent($("usuario").value.trim()));
+    const j = await jsonSeguro(r); if(!r.ok) throw new Error(j.error || "Error");
+    caja.innerHTML = "";
+    if(!j.consultas.length){ caja.textContent = "Aún no tienes consultas guardadas."; return; }
+    const t = document.createElement("table"); t.className = "tabla";
+    const cab = t.insertRow();
+    ["Fecha","Lugar","Cultivo","Temp. (°C)","Grados-día","Humedad (%)","Lluvia (mm)","Desarrollo",""].forEach(x => { const th = document.createElement("th"); th.textContent = x; cab.appendChild(th); });
+    j.consultas.forEach(c => {
+      const f = t.insertRow();
+      [c.creado_en, c.municipio + ", " + c.departamento, c.cultivo, c.t_media ?? "–", c.gda ?? "–", c.hr_media ?? "–", c.p_acum ?? "–"].forEach(v => { f.insertCell().textContent = v; });
+      const sp = document.createElement("span"); sp.className = "badge " + (c.riesgo || ""); sp.textContent = c.riesgo || "–"; f.insertCell().appendChild(sp);
+      const b = document.createElement("button"); b.className = "mini"; b.textContent = "Repetir";
+      b.onclick = () => { $("departamento").value = c.departamento; $("municipio").value = c.municipio; $("cultivo").value = c.cultivo; $("analizar").scrollIntoView({behavior:"smooth"}); };
+      f.insertCell().appendChild(b);
+    });
+    caja.appendChild(t);
+  }catch(e){ caja.textContent = "⚠️ " + e.message; }
+};
+</script>
+</body>
+</html>
+ 
